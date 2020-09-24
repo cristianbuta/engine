@@ -1,25 +1,37 @@
-import { ProducerConfig, ProducerInstance } from "./producer";
-import { RenderConfig, RootElement } from "./view";
+import { ProducerConfig, ProducerContext, ProducerInstance } from "./producer";
+import { ViewInstance } from "./view";
+import { DatastoreInstance } from "./db";
+import { RenderConfig, Container } from "./view";
 
-export interface EngineConfig {
+export type EngineConfig = {
   autostart?: boolean;
   producers?: {
     list: ProducerConfig[];
   };
-  view?: RenderConfig;
+  render?: RenderConfig;
   state?: {
-    initial?: {
-      [key: string]: any;
-    };
-    schema?: any;
+    [key: string]: any;
   };
   debug?: boolean;
+};
+
+export interface EngineContext {
+  db: DatastoreInstance;
+  producers: ProducerInstance[];
+  container?: Container;
 }
-export interface EngineApi {
+
+export enum EngineStatus {
+  NOT_INITIALIZED,
+  RUNNING,
+  STOPPED,
+}
+
+export interface EngineInstance {
+  status: EngineStatus;
+  context: EngineContext;
   start: () => void;
   stop: () => void;
-  getRoot: () => RootElement;
-  getProducers: () => ProducerInstance[];
 }
 
 export abstract class Engine {}

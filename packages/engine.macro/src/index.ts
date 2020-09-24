@@ -10,17 +10,17 @@ import { prepareForEngine, TransformType } from "./utils/prepareForEngine";
  * unnecessary ones
  */
 
-const EngineMacroHandler:MacroHandler = ({ 
-  references, 
-  state, 
-  babel, 
+const EngineMacroHandler: MacroHandler = ({
+  references,
+  state,
+  babel,
   // @ts-ignore
-  config 
+  config,
 }) => {
-  const { Wildcard = [], Path = [], view = [], producer = [] } = references;
-  state.config = config
-  view.forEach((x) => prepareForEngine(babel, state, x, TransformType.VIEW));
-  producer.forEach((x) =>
+  const { Wildcard = [], Path = [], View = [], Producer = [] } = references;
+  state.config = config;
+  View.forEach((x) => prepareForEngine(babel, state, x, TransformType.VIEW));
+  Producer.forEach((x) =>
     prepareForEngine(babel, state, x, TransformType.PRODUCER)
   );
   if (Path.length > 0) {
@@ -33,16 +33,17 @@ const EngineMacroHandler:MacroHandler = ({
       addWildcardImport(babel, state, x);
     });
   }
-}
+};
 
 interface Config {
   [k: string]: any;
 }
 
-export type producer<T = any> = (props: T) => void;
-declare type viewFunction<T> = (props: T) => ReactElement<T> | null;
-export declare type view<T=any> = viewFunction<T> & {producers?: producer[]};
-
+export type Producer<T = any> = (props: T) => void;
+declare type ViewFunction<T> = (props: T) => ReactElement<T> | null;
+export declare type View<T = any> = ViewFunction<T> & {
+  producers?: Producer[];
+};
 export const Observe: any = {};
 export const Update: any = {};
 export const Get: any = {};

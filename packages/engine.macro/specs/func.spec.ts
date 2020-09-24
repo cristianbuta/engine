@@ -16,8 +16,8 @@ pluginTester({
   tests: {
     "should support composed types: functions": {
       code: `
-        import { producer } from ${macroFile}
-        const result: producer = ({
+        import { Producer } from ${macroFile}
+        const result: Producer = ({
           a1 = Get.foo || '123' && '123'
         }) => { }
       `,

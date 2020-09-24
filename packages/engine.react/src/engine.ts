@@ -2,38 +2,34 @@ import db from "@c11/engine.db";
 import { Producer } from "@c11/engine.producer";
 import { Render, view } from "./react";
 import {
-  EngineApi,
+  EngineInstance,
   EngineConfig,
   ProducerInstance,
+  EngineStatus,
+  EngineContext,
   ProducerContext,
   RenderInstance,
   ViewInstance,
 } from "@c11/engine.types";
 
-enum EngineState {
-  NOT_INITIALIZED,
-  RUNNING,
-  STOPPED,
-}
-
 export { view };
 
-export class Engine implements EngineApi {
-  state: EngineState = EngineState.NOT_INITIALIZED;
+export class Engine implements EngineInstance {
+  private engineStatus: EngineStatus = EngineStatus.NOT_INITIALIZED;
   private config: EngineConfig;
   private producers: ProducerInstance[];
   private render: RenderInstance | null = null;
-  private context: ProducerContext;
+  private producerContext: ProducerContext;
   private views: ViewInstance[];
   constructor(config: EngineConfig) {
     this.config = config;
     this.views = [];
     this.producers = [];
     let initialState = {};
-    if (config.state && config.state.initial) {
-      initialState = config.state.initial;
+    if (config.state) {
+      initialState = config.state;
     }
-    this.context = {
+    this.producerContext = {
       db: db(initialState),
       addView: this.addView.bind(this),
       debug: config.debug,
@@ -46,23 +42,25 @@ export class Engine implements EngineApi {
   private init() {
     if (this.config.producers) {
       this.producers = this.config.producers.list.map((config) => {
-        const producer = new Producer(config, this.context);
+        const producer = new Producer(config, this.producerContext);
         producer.mount();
         return producer;
       });
     }
 
     if (this.config.view) {
-      this.render = new Render(this.context, this.config.view);
+      this.render = new Render(this.producerContext, this.config.render);
       this.render.mount();
     }
 
-    this.state = EngineState.RUNNING;
+    this.engineStatus = EngineStatus.RUNNING;
   }
+
   private addView(view: ViewInstance) {
     this.views.push(view);
   }
-  getProducers() {
+
+  private getProducers() {
     const viewsProducers = this.views.reduce((acc, x) => {
       acc = acc.concat(x.producers);
       return acc;
@@ -78,9 +76,9 @@ export class Engine implements EngineApi {
    * ```
    */
   start() {
-    if (this.state === EngineState.NOT_INITIALIZED) {
+    if (this.engineStatus === EngineStatus.NOT_INITIALIZED) {
       this.init();
-    } else if (this.state === EngineState.STOPPED) {
+    } else if (this.engineStatus === EngineStatus.STOPPED) {
       // this.resume();
     } else {
       // nothing, engine already running
@@ -88,21 +86,28 @@ export class Engine implements EngineApi {
     return this;
   }
 
-  getContext() {
-    return this.context;
+  get status() {
+    return this.engineStatus;
   }
 
-  getRoot() {
+  get context() {
+    const context: EngineContext = {
+      db: this.context.db,
+      producers: this.getProducers(),
+    };
+
     if (this.render) {
-      return this.render.getRoot();
-    } else {
-      return null;
+      context.container = this.render.getContainer(),
     }
+
+    return context;
   }
 
   stop() {
+    // TODO: Implement the stop method
     return this;
   }
+
   // update() {
   // for views ReactDOM.unmountComponentAtNode(container)
   // }
